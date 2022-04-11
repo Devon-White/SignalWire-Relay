@@ -16,14 +16,24 @@ class MyConsumer < Signalwire::Relay::Consumer
 
   def on_incoming_call(call)
     call.answer
-    call.play_tts text: 'the quick brown fox jumps over the lazy dog'
+    call.play_tts text: 'welcome to signalwire'
+    play_action = call.play_audio!('https://cdn.signalwire.com/default-music/welcome.mp3')
+    sleep (5)
+    play_action.stop
+    sleep (1)
+    connected = call.connect [
+      [{ type: 'phone', params: { to_number: '+1XXXXXXXXXX',from_number: '+1YYYYYYYYYY', timeout: 30 } }],
+                             ]
+        if connected.successful
+          # connected.call is the remote leg connected with yours.
+          connected.call.wait_for_ended
+        end
+        call.hangup
+      end
 
-    call.hangup
-  end
+      def teardown
+        puts "this is an example of teardown"
+      end
+      end
 
-  def teardown
-    puts "this is an example of teardown"
-  end
-end
-
-MyConsumer.new(project: 'Project Here', token: 'Token Here').run
+MyConsumer.new(project: SIGNALWIRE_PROJECT_KEY, token: SIGNALWIRE_TOKEN).run
