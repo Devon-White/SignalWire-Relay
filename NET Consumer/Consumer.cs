@@ -1,29 +1,56 @@
-﻿using SignalWire.Relay;
+using SignalWire.Relay;
 using SignalWire.Relay.Calling;
+using SignalWire.Relay.Messaging;
+using System;
+using System.Collections.Generic;
+using Client = SignalWire.Relay.Client;
+
+public static class Globals
+{
+    public const String From_num = "Put Relay Number Here";
+    public const String To_num = "Destination Number Here";
+}
+
+
 namespace Example
 {
     internal class ReadyConsumer : Consumer
     {
+
         protected override void Setup()
         {
-            Project = "PROJECT HERE";
-            Token = "TOKEN HERE";
-            Contexts = new List<string> { "test" };
-            // Do additional setup here
+            Project = "Project ID Here";
+            Token = "Auth Token Here";
+            Contexts = new List<string> { "Context Here" };
         }
+
+        protected override void Ready()
+        {
+            try
+            {
+
+                Console.WriteLine("Client ready, sending message...");
+                SendResult result = Client.Messaging.Send("test", Globals.To_num, Globals.From_num, new SendSource("Respond With Y to see the answer to 2+2\nRespond With N if you hate math"));
+
+            }
+
+            finally
+            {
+                Console.WriteLine("Message Sent");
+            }
+        }
+            
 
         protected override void OnIncomingCall(Call call)
         {
-            AnswerResult resultAnswer = call.Answer();
-            Console.WriteLine("Call has been answered");
-            call.PlayTTS("Welcome to SignalWire!");
-            Console.WriteLine("We are saying welcome to signalwire");
-            PlayAction actionPlay = call.PlayAudioAsync("https://cdn.signalwire.com/default-music/welcome.mp3");
-            Console.WriteLine("Playing SignalWire Intro Music for 5 seconds");
-            Thread.Sleep(5000);
-            StopResult resultStop = actionPlay.Stop();
-            ConnectResult resultConnect = call.Connect(new List<List<CallDevice>>
 
+            AnswerResult resultAnswer = call.Answer();
+            Console.WriteLine(call.Answered);
+            call.PlayTTS("Welcome to SignalWire!");
+            PlayAction actionPlay = call.PlayAudioAsync("https://cdn.signalwire.com/default-music/welcome.mp3");
+            Thread.Sleep(5000);
+            actionPlay.Stop();
+            ConnectResult resultConnect = call.Connect(new List<List<CallDevice>>
             {
                 new List<CallDevice>
                 {
@@ -32,16 +59,38 @@ namespace Example
                         Type = CallDevice.DeviceType.phone,
                         Parameters = new CallDevice.PhoneParams
                         {
-                            ToNumber = "+1XXXXXXXXXX",
-                            FromNumber = "+1XXXXXXXXXX",
+                            ToNumber = Globals.To_num,
+                            FromNumber = Globals.From_num,
                             Timeout = 30,
                         }
                     }
                 }});
-                if (resultConnect.Successful) {
-                Console.WriteLine("Call has been answered");
+            if (resultConnect.Successful)
+            {
+               Console.WriteLine("Call has been answered");
+               call.PlayTTS("We have answered the call. Now ending the call");
+               call.Hangup();
+
+            }
+
+        }
+        protected override void OnIncomingMessage(Message message)
+        {
+           var msg_body = message.Body.ToLower();
+            Console.WriteLine(msg_body);
+            if (msg_body == "y")
+            {
+                Client.Messaging.Send("test", Globals.To_num, Globals.From_num, new SendSource("The answer to 2+2 is 4!"));
+
+            }
+            else if (msg_body == "n")
+                        {
+                Client.Messaging.Send("test", Globals.To_num, Globals.From_num, new SendSource("Wow, what a math hater"));
+            }
             
-                // The call was connected, and is available at resultConnect.Call
+            else
+            {
+                Client.Messaging.Send("test", Globals.To_num, Globals.From_num, new SendSource("Wrong input"));
             }
         }
     }
