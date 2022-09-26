@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using SignalWire.Relay;
 using SignalWire.Relay.Calling;
 using SignalWire.Relay.Messaging;
@@ -6,8 +5,8 @@ using Client = SignalWire.Relay.Client;
 
 public static class Globals
 {
-    public const String SW_num = "SW Number HERE";
-    public const String PSTN_To_num = "Personal Here";
+    public const String SW_num = "SW Relay Number HERE";
+    public const String PSTN_To_num = "Destination Number Here";
 }
 
 namespace Example
@@ -17,7 +16,7 @@ namespace Example
         protected override void Setup()
         {
             Project = "Project ID Here";
-            Token = "Auth Token Here;
+            Token = "Auth Token HERE";
             Contexts = new List<string> { "test" };
         }
 
@@ -27,7 +26,7 @@ namespace Example
             {
 
                 Console.WriteLine("Client ready, sending message...");
-                SendResult result = Client.Messaging.Send("test", Globals.PSTN_To_num, Globals.SW_num, new SendSource("Respond With Y to receive a call\n respond with N to ignore my request."));
+                SendResult result = Client.Messaging.Send("test", "Number you wish to send SMS too", Globals.SW_num, new SendSource("Respond With Y to receive a call\n respond with N to ignore my request."));
 
             }
 
@@ -40,9 +39,9 @@ namespace Example
 
         protected override void OnIncomingCall(Call call)
         {
-            var cur_call = (PhoneCall)call;
+            var curCall = (PhoneCall)call;
             AnswerResult resultAnswer = call.Answer();
-            Welcome(cur_call, Client);
+            Welcome(curCall, Client);
         }
 
         private static Client GetClient(Client client)
@@ -86,7 +85,7 @@ namespace Example
                                 Type = CallDevice.DeviceType.phone,
                                 Parameters = new CallDevice.PhoneParams
                                 {
-                                    ToNumber = Globals.PSTN_To_num,
+                                    ToNumber = Gloabls.PSTN_To_num,
                                     FromNumber = (string)From_num,
                                     Timeout = 30,
                                 }
@@ -125,7 +124,6 @@ namespace Example
 
         private protected static void Welcome(Call call, Client client)
         {
-            var z = (PhoneCall)call;
             call.PlayTTS("Welcome to SignalWire!");
             var playAction = call.PlayAudioAsync("https://cdn.signalwire.com/default-music/welcome.mp3");
             Thread.Sleep(5000);
@@ -178,23 +176,23 @@ namespace Example
         public static async Task<object> Request(PhoneCall call, Client client)
         {
             var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync("https://www.affirmations.dev");
-            string res = response.Content.ReadAsStringAsync().Result;
-            Console.WriteLine(res);
+            var request = await httpClient.GetAsync("https://www.affirmations.dev");
+            string response = request.Content.ReadAsStringAsync().Result;
+            Console.WriteLine(response);
             char[] charsToTrim = { '{', '}', '"', ':', '"' };
             const string toRemove = "affirmation";
-            var i = res.IndexOf(toRemove, StringComparison.Ordinal);
+            var i = response.IndexOf(toRemove, StringComparison.Ordinal);
             if (i >= 0)
             {
-                var almost = res.Remove(i, toRemove.Length);
+                var strTrimmed = response.Remove(i, toRemove.Length);
 
-                string partly = almost.Trim(charsToTrim);
-                string Final = partly;
+                string charsTrimmed = strTrimmed.Trim(charsToTrim);
+                string Final = charsTrimmed;
                 Console.WriteLine(Final);
                 call.PlayTTS($"{Final}");
                 Menu(call, GetClient(client));
             }
-            return res;
+            return response;
         }
 
         protected override void OnIncomingMessage(Message message)
@@ -207,14 +205,14 @@ namespace Example
                 Client.Messaging.Send("test", cus_num, Globals.SW_num, new SendSource($"Sending you a call now from " + $"{Globals.SW_num}"));
                 Call call = Client.Calling.NewPhoneCall(cus_num, Globals.SW_num);
                 DialResult resultdial = call.Dial();
-                Call z = resultdial.Call;
-                z.PlayTTS("We are testing");
+                Call resultdialCall = resultdial.Call;
+                resultdialCall.PlayTTS("We are testing");
                 if (resultdial.Successful)
                 {
-                    z.PlayTTS("Connecting to new call");
+                    resultdialCall.PlayTTS("Connecting to new call");
                     Thread.Sleep(1000);
 
-                    ConnectResult resultConnect = z.Connect(new List<List<CallDevice>>
+                    ConnectResult resultConnect = resultdialCall.Connect(new List<List<CallDevice>>
                         {
                             new List<CallDevice>
                             {
@@ -234,10 +232,9 @@ namespace Example
 
 
                     if (!resultConnect.Successful) return;
-                    Call y = resultConnect.Call;
-                    y.Hangup();
-                    call.Hangup();
-                    Welcome(z, Client);
+                    Call resultConnectCall = resultConnect.Call;
+                    resultConnectCall.Hangup();
+                    Welcome(resultdialCall, Client);
                 }
             }
             else if (msg_body == "n")
