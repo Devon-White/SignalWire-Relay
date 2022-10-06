@@ -1,0 +1,7 @@
+PROJECTID=PROJECTID HERE
+AUTHTOKEN=AUTH TOKEN HERE
+SPACENAME=SPACENAMEHERE.signalwire.com
+WEBHOOK_NUM=SW Number Using NGROK Webhook
+RELAY_NUM=SW Number Hosting Relay
+PERSONAL_NUM=Personal Number that can recieve SMS and Voice
+CONTEXT=Relay Context Here
