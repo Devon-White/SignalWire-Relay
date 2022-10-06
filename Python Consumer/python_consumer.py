@@ -51,7 +51,7 @@ async def Affirmation(call):
 
 
 async def Connected_Call(call):
-    await call.play_tts("I am Leg 1. Please Say I am Agent 1")
+    await call.play_tts("Please leave a message to be recorded")
     await sleep(5)
     await call.play_tts("Ending call and Transcribing recording.")
     await call.hangup()
